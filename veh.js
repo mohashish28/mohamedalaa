@@ -2,27 +2,21 @@ class vehicle {
   constructor(x, y) {
     this.pos = createVector(x, y)
     this.target = createVector(x, y)
-    this.vel = p5.Vector.random2D()
+    this.vel = createVector(0, 0)
     this.acc = createVector(0, 0)
-
     this.maxspeed = 10
-    this.maxforce = 0.15   // 🔹 lower = smoother curves
+    this.maxforce = 0.5
   }
 
   show() {
     strokeWeight(1)
-    stroke(255)
+    fill(255)
     point(this.pos.x, this.pos.y)
+    // circle(this.pos.x, this.pos.y, 20)
   }
 
   update() {
-    // apply forces
     this.vel.add(this.acc)
-
-    // 🔹 SMOOTHING (Bezier-like curvature)
-    let desired = this.vel.copy().setMag(this.maxspeed)
-    this.vel.lerp(desired, 0.05)   // ← magic line
-
     this.pos.add(this.vel)
     this.acc.set(0, 0)
   }
@@ -34,40 +28,45 @@ class vehicle {
   flee(target) {
     let force = p5.Vector.sub(this.pos, target)
     let d = force.mag()
+    let speed = this.maxspeed
 
     if (d < 60) {
-      force.setMag(this.maxspeed)
+      force.setMag(speed)
       force.sub(this.vel)
-      force.limit(this.maxforce)
       force.mult(-1)
-      return force
+      force.mult(this.maxforce)
+    } else {
+      force.set(0, 0)
     }
 
-    return createVector(0, 0)
+    return force
   }
 
   arrive(target) {
     let force = p5.Vector.sub(target, this.pos)
     let d = force.mag()
-
     let speed = this.maxspeed
+
     if (d < 60) {
       speed = map(d, 0, 60, 0, this.maxspeed)
     }
 
     force.setMag(speed)
     force.sub(this.vel)
-    force.limit(this.maxforce)
+    force.mult(this.maxforce)
+
     return force
   }
 
   behaviour() {
-    let mouse = createVector(mouseX, mouseY)
+    let flee
+    let mous = createVector(mouseX, mouseY)
 
-    let fleeForce = this.flee(mouse)
-    let arriveForce = this.arrive(this.target)
+    flee = this.flee(mous)
+    this.applyforce(flee)
 
-    this.applyforce(fleeForce)
-    this.applyforce(arriveForce)
+    let arrive
+    arrive = this.arrive(this.target)
+    this.applyforce(arrive)
   }
 }
